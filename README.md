@@ -45,11 +45,15 @@ This project uses [uv](https://docs.astral.sh/uv/).
 
 ```bash
 uv sync
+echo 'SCRAPINGBEE_API_KEY=...' > .env
+uv run --env-file .env plagiarism-checker
+uv run pytest   # mocked, never calls the network
 ```
 
 ## Status
 
-Project skeleton only. Nothing is implemented yet.
+Done: upload (.txt), phrase extraction, Google search, fetching result pages.
+Next: clean the HTML, compare texts, similarity report.
 
 ## License
 
