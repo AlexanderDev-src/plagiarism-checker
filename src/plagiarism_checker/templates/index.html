@@ -20,23 +20,6 @@
       </div>
       <button class="btn btn-primary" type="submit">Check</button>
     </form>
-
-    {% if results %}
-    <h2 class="h5 mt-5">Phrases and search results</h2>
-    {% if search_error %}<div class="alert alert-warning" role="alert">{{ search_error }}</div>{% endif %}
-    <ol class="list-group list-group-numbered">
-      {% for phrase, urls in results %}
-      <li class="list-group-item">
-        “{{ phrase }}”
-        {% if urls %}<ul class="small mt-1 mb-0">
-          {% for u in urls %}<li><a href="{{ u }}" target="_blank" rel="noopener noreferrer">{{ u }}</a>
-            {% if pages[u] %}<span class="badge text-bg-success">fetched</span>{% else %}<span class="badge text-bg-secondary">could not fetch</span>{% endif %}
-          </li>{% endfor %}
-        </ul>{% elif not search_error %}<div class="small text-muted">No results.</div>{% endif %}
-      </li>
-      {% endfor %}
-    </ol>
-    {% endif %}
   </main>
 </body>
 </html>
