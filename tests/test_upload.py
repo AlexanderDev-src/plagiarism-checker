@@ -12,26 +12,40 @@ def client(monkeypatch):
 
 
 def upload(client, data, name):
-    return client.post("/", data={"document": (BytesIO(data), name)}, content_type="multipart/form-data")
-
-
-def test_get_shows_form(client):
-    assert b'name="document"' in client.get("/").data
+    return client.post("/api/check", data={"document": (BytesIO(data), name)}, content_type="multipart/form-data")
 
 
 def test_valid_txt(client):
     r = upload(client, "สวัสดี hello".encode(), "a.txt")
-    assert r.status_code == 200 and b"12 characters" in r.data
-    assert b"SCRAPINGBEE_API_KEY" in r.data
+    assert r.status_code == 200 and r.json["chars"] == 12
+    assert "SCRAPINGBEE_API_KEY" in r.json["search_error"]
 
 
-def test_shows_search_links(client, monkeypatch):
+@pytest.mark.parametrize("data,name", [(b"x", "a.pdf"), (b"\xff\xfe", "a.txt"), (b"  \n", "a.txt")])
+def test_rejects_bad_input(client, data, name):
+    r = upload(client, data, name)
+    assert r.status_code == 400 and r.json["error"]
+
+
+def test_missing_file(client):
+    assert client.post("/api/check", data={}).status_code == 400
+
+
+def test_too_large_is_json(client):
+    r = upload(client, b"a " * (1024 * 1024 + 1), "a.txt")
+    assert r.status_code == 413 and "2 MB" in r.json["error"]
+
+
+def test_search_results_and_fetch_status(client, monkeypatch):
     monkeypatch.setattr("plagiarism_checker.google_top_urls", lambda p: ["https://example.com/x", "https://example.com/y"])
     fetched = []
     monkeypatch.setattr("plagiarism_checker.fetch_html", lambda u: fetched.append(u) or ("<p>hi</p>" if u.endswith("x") else None))
     r = upload(client, b"one two three four five six", "a.txt")
-    assert b'href="https://example.com/x"' in r.data
-    assert b"fetched</span>" in r.data and b"could not fetch" in r.data
+    assert r.json["search_error"] is None
+    assert r.json["results"][0]["urls"] == [
+        {"url": "https://example.com/x", "fetched": True},
+        {"url": "https://example.com/y", "fetched": False},
+    ]
     assert sorted(fetched) == ["https://example.com/x", "https://example.com/y"]  # each URL fetched once
 
 
@@ -41,13 +55,5 @@ def test_search_network_error_is_shown(client, monkeypatch):
 
     monkeypatch.setattr("plagiarism_checker.google_top_urls", boom)
     r = upload(client, b"one two three four five six", "a.txt")
-    assert r.status_code == 200 and b"Search failed: timed out" in r.data
-
-
-@pytest.mark.parametrize("data,name", [(b"x", "a.pdf"), (b"\xff\xfe", "a.txt"), (b"  \n", "a.txt")])
-def test_rejects_bad_input(client, data, name):
-    assert upload(client, data, name).status_code == 400
-
-
-def test_missing_file(client):
-    assert client.post("/", data={}).status_code == 400
+    assert r.status_code == 200 and r.json["search_error"] == "Search failed: timed out"
+    assert r.json["results"][0]["urls"] == []

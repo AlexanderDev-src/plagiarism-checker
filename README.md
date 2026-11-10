@@ -37,18 +37,28 @@ Publishing companies often check manuscripts by hand: someone searches Google fo
 - Python with Flask
 - ScrapingBee (or a similar service) to scrape Google results
 - BeautifulSoup to clean the HTML
-- Bootstrap for the front end
+- Astro + Svelte (in `web/`) with Bootstrap for the front end
 
 ## Setup
 
-This project uses [uv](https://docs.astral.sh/uv/).
+Flask API with [uv](https://docs.astral.sh/uv/), front end with [bun](https://bun.sh/).
 
 ```bash
 uv sync
+(cd web && bun install)
 echo 'SCRAPINGBEE_API_KEY=...' > .env
-uv run --env-file .env plagiarism-checker
-uv run pytest   # mocked, never calls the network
 ```
+
+Development, two terminals, then open http://localhost:4321 (`/api` is proxied to Flask):
+
+```bash
+uv run --env-file .env plagiarism-checker
+cd web && bun run dev
+```
+
+Production-style: `cd web && bun run build`, then run Flask alone; it serves `web/dist` at http://localhost:5000.
+
+Tests (mocked, never call the network): `uv run pytest`
 
 ## Status
 
