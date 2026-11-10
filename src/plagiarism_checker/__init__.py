@@ -3,6 +3,7 @@ from pathlib import Path
 
 from flask import Flask, jsonify, request
 
+from .clean import main_text
 from .phrases import extract_phrases
 from .scrape import fetch_html
 from .search import google_top_urls
@@ -52,14 +53,15 @@ def check():
 
     urls = list(dict.fromkeys(u for us in found for u in us))  # phrases can share a URL
     with ThreadPoolExecutor() as pool:
-        pages = dict(zip(urls, pool.map(fetch_html, urls)))
+        htmls = pool.map(fetch_html, urls)
+    pages = {u: main_text(h) if h else "" for u, h in zip(urls, htmls)}  # url -> cleaned text, "" if unusable
 
     return jsonify(
         filename=file.filename,
         chars=len(text),
         search_error=search_error,
         results=[
-            {"phrase": p, "urls": [{"url": u, "fetched": pages[u] is not None} for u in us]}
+            {"phrase": p, "urls": [{"url": u, "fetched": bool(pages[u])} for u in us]}
             for p, us in zip(phrases, found)
         ],
     )
