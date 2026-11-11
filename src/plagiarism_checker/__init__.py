@@ -1,4 +1,4 @@
-from concurrent.futures import ThreadPoolExecutor
+from concurrent.futures import ThreadPoolExecutor, wait
 from pathlib import Path
 
 from flask import Flask, Response, jsonify, request
@@ -14,6 +14,8 @@ WEB_DIST = Path(__file__).resolve().parents[2] / "web" / "dist"  # Astro build o
 
 app = Flask(__name__, static_folder=WEB_DIST, static_url_path="")
 app.config["MAX_CONTENT_LENGTH"] = 2 * 1024 * 1024  # 2 MB
+# Live run: every page that loaded did so in under 3.5 s; a slow-drip site took 17 s and still failed.
+FETCH_DEADLINE = 6  # seconds for the whole fetch step; urlopen's timeout is per read, not total
 
 
 def bad_request(message: str, status: int = 400):
@@ -54,11 +56,12 @@ def check():
         search_error = f"Search failed: {e}"
 
     urls = list(dict.fromkeys(u for us in found for u in us))  # phrases can share a URL
-    with ThreadPoolExecutor() as pool:
-        htmls = pool.map(fetch_html, urls)
-    pages = {
-        u: main_text(h) if h else "" for u, h in zip(urls, htmls)
-    }  # url -> cleaned text, "" if unusable
+    pool = ThreadPoolExecutor()
+    futures = {u: pool.submit(fetch_html, u) for u in urls}
+    done, _ = wait(futures.values(), timeout=FETCH_DEADLINE)
+    pool.shutdown(wait=False, cancel_futures=True)  # don't wait for stragglers; they end on their own timeout
+    htmls = {u: f.result() if f in done else None for u, f in futures.items()}
+    pages = {u: main_text(h) if h else "" for u, h in htmls.items()}  # url -> cleaned text, "" if unusable
 
     similarity, matches = compare(text, pages)
 

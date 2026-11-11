@@ -4,7 +4,7 @@ MAX_BYTES = 2 * 1024 * 1024
 HEADERS = {"User-Agent": "Mozilla/5.0 (compatible; plagiarism-checker)"}
 
 
-def fetch_html(url: str, timeout: int = 15) -> str | None:
+def fetch_html(url: str, timeout: int = 5) -> str | None:
     """HTML of `url`, or None if it is not http(s), not HTML, or fails to load."""
     # shortcut: plain HTTP fetch (no ScrapingBee credits); sites that block bots return None, route through ScrapingBee if too many fail
     if not url.startswith(("http://", "https://")):
