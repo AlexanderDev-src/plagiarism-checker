@@ -1,10 +1,11 @@
 from concurrent.futures import ThreadPoolExecutor
 from pathlib import Path
 
-from flask import Flask, jsonify, request
+from flask import Flask, Response, jsonify, request
 
 from .clean import main_text
 from .compare import compare
+from .report import build_report
 from .phrases import extract_phrases
 from .scrape import fetch_html
 from .search import google_top_urls
@@ -69,6 +70,19 @@ def check():
             {"phrase": p, "urls": [{"url": u, "fetched": bool(pages[u])} for u in us]}
             for p, us in zip(phrases, found)
         ],
+    )
+
+
+@app.post("/api/report")
+def report():
+    data = request.get_json(silent=True)
+    if not isinstance(data, dict) or "matches" not in data:  # only our own /api/check result shape
+        return bad_request("Send the JSON result from /api/check.")
+    pdf = build_report(data)
+    return Response(
+        pdf,
+        mimetype="application/pdf",
+        headers={"Content-Disposition": "attachment; filename=report.pdf"},
     )
 
 

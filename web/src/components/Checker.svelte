@@ -15,6 +15,22 @@
   let error = $state('');
   let report = $state<Report | null>(null);
 
+  async function downloadPdf() {
+    const res = await fetch('/api/report', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify(report),
+    });
+    if (!res.ok) {
+      error = 'Could not build the PDF.';
+      return;
+    }
+    const url = URL.createObjectURL(await res.blob());
+    const a = Object.assign(document.createElement('a'), { href: url, download: 'report.pdf' });
+    a.click();
+    URL.revokeObjectURL(url);
+  }
+
   async function submit(e: SubmitEvent) {
     e.preventDefault();
     if (!file) return;
@@ -59,7 +75,10 @@
 </form>
 
 {#if report}
-  <h2 class="h5 mt-5">Similarity:{report.similarity}%</h2>
+  <div class="d-flex align-items-center justify-content-between mt-5">
+    <h2 class="h5 mb-0">Similarity: {report.similarity}%</h2>
+    <button class="btn btn-outline-secondary btn-sm" type="button" onclick={downloadPdf}>Download PDF</button>
+  </div>
   {#each report.matches as m}
     <div class="card mb-3">
       <div class="card-header small">

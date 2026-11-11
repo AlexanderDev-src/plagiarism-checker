@@ -62,8 +62,8 @@ Tests (mocked, never call the network): `uv run pytest`
 
 ## Status
 
-Done: upload (.txt), phrase extraction, Google search, fetching result pages.
-Next: clean the HTML, compare texts, similarity report.
+Done: upload (.txt), phrase extraction, Google search, fetching and cleaning result pages, similarity report, PDF download (`POST /api/report`).
+Known limits: exact 8-word matches only; Thai text is not word-shaped in the PDF.
 
 ## License
 
