@@ -16,6 +16,9 @@ def test_prefers_article_over_main():
 
 
 def test_falls_back_to_body_and_handles_fragments():
-    assert main_text("<body><div>plain <i>text</i></div><footer>x</footer></body>") == "plain text"
+    assert (
+        main_text("<body><div>plain <i>text</i></div><footer>x</footer></body>")
+        == "plain text"
+    )
     assert main_text("just text") == "just text"
     assert main_text("") == ""
