@@ -68,6 +68,8 @@ Production-style: `cd web && bun run build`, then run Flask alone; it serves `we
 
 Tests (mocked, never call the network): `uv run pytest`
 
+Vercel: the Flask app is the function (`[tool.vercel]` in `pyproject.toml`), and the build script copies the Astro build into `public/` for the CDN. Set `SCRAPINGBEE_API_KEY` in the Vercel project's environment variables.
+
 ## Status
 
 All checklist items are done.
