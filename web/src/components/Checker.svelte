@@ -1,6 +1,14 @@
 <script lang="ts">
   type Result = { phrase: string; urls: { url: string; fetched: boolean }[] };
-  type Report = { filename: string; chars: number; search_error: string | null; results: Result[] };
+  type Match = { url: string; similarity: number; passages: string[] };
+  type Report = {
+    filename: string;
+    chars: number;
+    search_error: string | null;
+    similarity: number;
+    matches: Match[];
+    results: Result[];
+  };
 
   let file = $state<File | null>(null);
   let loading = $state(false);
@@ -49,6 +57,23 @@
     {loading ? 'Checking…' : 'Check'}
   </button>
 </form>
+
+{#if report}
+  <h2 class="h5 mt-5">Similarity:{report.similarity}%</h2>
+  {#each report.matches as m}
+    <div class="card mb-3">
+      <div class="card-header small">
+        <a href={m.url} target="_blank" rel="noopener noreferrer">{m.url}</a>
+        <span class="badge text-bg-warning">{m.similarity}%</span>
+      </div>
+      <ul class="list-group list-group-flush">
+        {#each m.passages as p}<li class="list-group-item">“{p}”</li>{/each}
+      </ul>
+    </div>
+  {:else}
+    <p class="text-muted">No similar passages found.</p>
+  {/each}
+{/if}
 
 {#if report?.results.length}
   <h2 class="h5 mt-5">Phrases and search results</h2>
