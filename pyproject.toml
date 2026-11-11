@@ -26,3 +26,10 @@ build-backend = "uv_build"
 dev = [
     "pytest>=9.2.0",
 ]
+
+[tool.vercel]
+entrypoint = "plagiarism_checker:app"
+
+[tool.vercel.scripts]
+# Vercel serves public/ from its CDN; Flask's static_folder is not used there
+build = "cd web && bun install --frozen-lockfile && bun run build && rm -rf ../public && cp -r dist ../public"
