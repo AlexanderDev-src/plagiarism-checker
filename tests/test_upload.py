@@ -7,12 +7,18 @@ from plagiarism_checker import app
 
 @pytest.fixture
 def client(monkeypatch):
-    monkeypatch.delenv("SCRAPINGBEE_API_KEY", raising=False)  # never hit the real API in tests
+    monkeypatch.delenv(
+        "SCRAPINGBEE_API_KEY", raising=False
+    )  # never hit the real API in tests
     return app.test_client()
 
 
 def upload(client, data, name):
-    return client.post("/api/check", data={"document": (BytesIO(data), name)}, content_type="multipart/form-data")
+    return client.post(
+        "/api/check",
+        data={"document": (BytesIO(data), name)},
+        content_type="multipart/form-data",
+    )
 
 
 def test_valid_txt(client):
@@ -21,7 +27,9 @@ def test_valid_txt(client):
     assert "SCRAPINGBEE_API_KEY" in r.json["search_error"]
 
 
-@pytest.mark.parametrize("data,name", [(b"x", "a.pdf"), (b"\xff\xfe", "a.txt"), (b"  \n", "a.txt")])
+@pytest.mark.parametrize(
+    "data,name", [(b"x", "a.pdf"), (b"\xff\xfe", "a.txt"), (b"  \n", "a.txt")]
+)
 def test_rejects_bad_input(client, data, name):
     r = upload(client, data, name)
     assert r.status_code == 400 and r.json["error"]
@@ -37,16 +45,25 @@ def test_too_large_is_json(client):
 
 
 def test_search_results_and_fetch_status(client, monkeypatch):
-    monkeypatch.setattr("plagiarism_checker.google_top_urls", lambda p: ["https://example.com/x", "https://example.com/y"])
+    monkeypatch.setattr(
+        "plagiarism_checker.google_top_urls",
+        lambda p: ["https://example.com/x", "https://example.com/y"],
+    )
     fetched = []
-    monkeypatch.setattr("plagiarism_checker.fetch_html", lambda u: fetched.append(u) or ("<p>hi</p>" if u.endswith("x") else None))
+    monkeypatch.setattr(
+        "plagiarism_checker.fetch_html",
+        lambda u: fetched.append(u) or ("<p>hi</p>" if u.endswith("x") else None),
+    )
     r = upload(client, b"one two three four five six", "a.txt")
     assert r.json["search_error"] is None
     assert r.json["results"][0]["urls"] == [
         {"url": "https://example.com/x", "fetched": True},
         {"url": "https://example.com/y", "fetched": False},
     ]
-    assert sorted(fetched) == ["https://example.com/x", "https://example.com/y"]  # each URL fetched once
+    assert sorted(fetched) == [
+        "https://example.com/x",
+        "https://example.com/y",
+    ]  # each URL fetched once
 
 
 def test_search_network_error_is_shown(client, monkeypatch):
