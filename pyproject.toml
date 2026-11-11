@@ -28,7 +28,7 @@ dev = [
 ]
 
 [tool.vercel]
-entrypoint = "plagiarism_checker:app"
+entrypoint = "src.plagiarism_checker:app"  # Vercel needs a file path from the repo root
 
 [tool.vercel.scripts]
 # Vercel serves public/ from its CDN; Flask's static_folder is not used there
