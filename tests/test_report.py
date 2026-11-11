@@ -12,15 +12,20 @@ RESULT = {
         {
             "url": "https://example.com/x",
             "similarity": 75.0,
-            "passages": ["สวัสดี hello world one two three"],
+            "passages": ["hello world one two three four five six"],
         }
     ],
 }
 
 
-def test_build_report_is_a_pdf_with_thai_text():
+def test_build_report_is_a_pdf():
     pdf = build_report(RESULT)
     assert pdf.startswith(b"%PDF") and len(pdf) > 1000
+
+
+def test_scraped_symbols_do_not_break_the_pdf():
+    odd = {**RESULT, "matches": [{"url": "https://x.com", "similarity": 1.0, "passages": ["“smart” quotes — dash … ★ 中"]}]}
+    assert build_report(odd).startswith(b"%PDF")
 
 
 def test_no_matches_still_builds():

@@ -5,8 +5,8 @@ from flask import Flask, Response, jsonify, request
 
 from .clean import main_text
 from .compare import compare
-from .report import build_report
 from .phrases import extract_phrases
+from .report import build_report
 from .scrape import fetch_html
 from .search import google_top_urls
 
@@ -56,7 +56,9 @@ def check():
     urls = list(dict.fromkeys(u for us in found for u in us))  # phrases can share a URL
     with ThreadPoolExecutor() as pool:
         htmls = pool.map(fetch_html, urls)
-    pages = {u: main_text(h) if h else "" for u, h in zip(urls, htmls)}  # url -> cleaned text, "" if unusable
+    pages = {
+        u: main_text(h) if h else "" for u, h in zip(urls, htmls)
+    }  # url -> cleaned text, "" if unusable
 
     similarity, matches = compare(text, pages)
 
@@ -76,7 +78,9 @@ def check():
 @app.post("/api/report")
 def report():
     data = request.get_json(silent=True)
-    if not isinstance(data, dict) or "matches" not in data:  # only our own /api/check result shape
+    if (
+        not isinstance(data, dict) or "matches" not in data
+    ):  # only our own /api/check result shape
         return bad_request("Send the JSON result from /api/check.")
     pdf = build_report(data)
     return Response(
