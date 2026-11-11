@@ -32,4 +32,5 @@ entrypoint = "src.plagiarism_checker:app"  # Vercel needs a file path from the r
 
 [tool.vercel.scripts]
 # Vercel serves public/ from its CDN; Flask's static_folder is not used there
-build = "cd web && bun install --frozen-lockfile && bun run build && rm -rf ../public && cp -r dist ../public"
+# shortcut: Vercel bun 1.3 cannot read the bun 1.4 lockfile, so it resolves fresh; pin versions if a build drifts
+build = "cd web && bun install && bun run build && rm -rf ../public && cp -r dist ../public"
