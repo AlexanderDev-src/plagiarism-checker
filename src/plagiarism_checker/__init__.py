@@ -1,11 +1,12 @@
 from concurrent.futures import ThreadPoolExecutor
 from pathlib import Path
 
-from flask import Flask, jsonify, request
+from flask import Flask, Response, jsonify, request
 
 from .clean import main_text
 from .compare import compare
 from .phrases import extract_phrases
+from .report import build_report
 from .scrape import fetch_html
 from .search import google_top_urls
 
@@ -55,7 +56,9 @@ def check():
     urls = list(dict.fromkeys(u for us in found for u in us))  # phrases can share a URL
     with ThreadPoolExecutor() as pool:
         htmls = pool.map(fetch_html, urls)
-    pages = {u: main_text(h) if h else "" for u, h in zip(urls, htmls)}  # url -> cleaned text, "" if unusable
+    pages = {
+        u: main_text(h) if h else "" for u, h in zip(urls, htmls)
+    }  # url -> cleaned text, "" if unusable
 
     similarity, matches = compare(text, pages)
 
@@ -69,6 +72,21 @@ def check():
             {"phrase": p, "urls": [{"url": u, "fetched": bool(pages[u])} for u in us]}
             for p, us in zip(phrases, found)
         ],
+    )
+
+
+@app.post("/api/report")
+def report():
+    data = request.get_json(silent=True)
+    if (
+        not isinstance(data, dict) or "matches" not in data
+    ):  # only our own /api/check result shape
+        return bad_request("Send the JSON result from /api/check.")
+    pdf = build_report(data)
+    return Response(
+        pdf,
+        mimetype="application/pdf",
+        headers={"Content-Disposition": "attachment; filename=report.pdf"},
     )
 
 

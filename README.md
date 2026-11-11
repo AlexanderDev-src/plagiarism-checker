@@ -62,8 +62,8 @@ Tests (mocked, never call the network): `uv run pytest`
 
 ## Status
 
-Done: upload (.txt), phrase extraction, Google search, fetching result pages.
-Next: clean the HTML, compare texts, similarity report.
+Done: upload (.txt), phrase extraction, Google search, fetching and cleaning result pages, similarity report, PDF download (`POST /api/report`).
+Known limits: English text only; exact 8-word matches, so reworded text is missed.
 
 ## License
 
