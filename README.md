@@ -15,29 +15,37 @@ Publishing companies often check manuscripts by hand: someone searches Google fo
 3. It extracts random phrases of about 5-10 words each.
 4. It runs a Google search for each phrase.
 5. It scrapes the top five results for each phrase and cleans the content (removes headers and so on, keeps the main text).
-6. It compares the uploaded text with each scraped page, using a text similarity metric.
+6. It compares the uploaded text with each scraped page: a word counts as copied when it sits in a run of 8 words that also appears in the page. Similarity is the share of the document found (containment), per page and across all pages.
 7. It returns:
    - a similarity percentage,
    - the similar parts of the text, each with a link to the original URL.
 
 ## Requirements checklist
 
-- [ ] Web page where the user can upload a document
-- [ ] Extract random phrases from the document
-- [ ] Run a Google search for the phrases
-- [ ] Scrape the top five results per phrase
-- [ ] Clean the scraped content (main text only)
-- [ ] Compare the uploaded content with each result (any metric, or make it customisable)
-- [ ] Return a similarity percentage
-- [ ] Return the similar parts with links to the source URLs
-- [ ] Extra: download the results as a PDF report
+- [x] Web page where the user can upload a document
+- [x] Extract random phrases from the document
+- [x] Run a Google search for the phrases
+- [x] Scrape the top five results per phrase
+- [x] Clean the scraped content (main text only)
+- [x] Compare the uploaded content with each result (any metric, or make it customisable)
+- [x] Return a similarity percentage
+- [x] Return the similar parts with links to the source URLs
+- [x] Extra: download the results as a PDF report
 
-## Suggested stack
+## Stack
 
-- Python with Flask
-- ScrapingBee (or a similar service) to scrape Google results
+- Python with Flask (JSON API)
+- ScrapingBee Google Search API for the search step; result pages fetched with plain `urllib`
 - BeautifulSoup to clean the HTML
+- fpdf2 for the PDF report
 - Astro + Svelte (in `web/`) with Bootstrap for the front end
+
+## API
+
+| Endpoint | Body | Returns |
+|---|---|---|
+| `POST /api/check` | form field `document` (.txt, UTF-8, max 2 MB) | JSON: `similarity`, `matches` (url, similarity, passages), `results` (phrases and their result links) |
+| `POST /api/report` | the JSON from `/api/check` | `report.pdf` |
 
 ## Setup
 
@@ -62,8 +70,14 @@ Tests (mocked, never call the network): `uv run pytest`
 
 ## Status
 
-Done: upload (.txt), phrase extraction, Google search, fetching and cleaning result pages, similarity report, PDF download (`POST /api/report`).
-Known limits: English text only; exact 8-word matches, so reworded text is missed.
+All checklist items are done.
+
+Known limits:
+
+- English text only; `.txt` uploads only.
+- Exact 8-word matches, so reworded text is missed.
+- Sites that block bots cannot be fetched, which can lower the score.
+- Each check uses 5 ScrapingBee searches.
 
 ## License
 
