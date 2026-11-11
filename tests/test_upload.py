@@ -74,3 +74,21 @@ def test_search_network_error_is_shown(client, monkeypatch):
     r = upload(client, b"one two three four five six", "a.txt")
     assert r.status_code == 200 and r.json["search_error"] == "Search failed: timed out"
     assert r.json["results"][0]["urls"] == []
+
+
+def test_slow_page_is_cut_off_at_the_deadline(client, monkeypatch):
+    import time
+
+    monkeypatch.setattr("plagiarism_checker.FETCH_DEADLINE", 0.3)
+    monkeypatch.setattr("plagiarism_checker.google_top_urls", lambda p: ["https://fast.com", "https://slow.com"])
+    monkeypatch.setattr(
+        "plagiarism_checker.fetch_html",
+        lambda u: time.sleep(2) or "<p>late</p>" if "slow" in u else "<p>hi</p>",
+    )
+    t = time.time()
+    r = upload(client, b"one two three four five six", "a.txt")
+    assert time.time() - t < 1.5  # did not wait the full 2 s
+    assert r.json["results"][0]["urls"] == [
+        {"url": "https://fast.com", "fetched": True},
+        {"url": "https://slow.com", "fetched": False},
+    ]
